@@ -16,6 +16,73 @@ function CURRENT_BASIS_IS_WORTH_SHOWING(self, model_transform) { self.m_axis.dra
 // When the web page's window loads it creates an "Animation" object.  It registers itself as a displayable object to our other class "GL_Context" -- which OpenGL is told to call upon every time a
 // draw / keyboard / mouse event happens.
 
+// Bee Class
+// holds all of the attributes for bee creation
+function Bee() {
+   	this.BEE_FLIGHT_RADIUS = 10;
+	this.BEE_FLIGHT_Y_MOVEMENT = 3;
+
+	this.MAX_WING_ANGLE = 60;
+	this.MAX_LEG_ANGLE = 30;
+
+	// dimensions for head
+	this.HEAD_MATERIAL = new Material (vec4 (.2, 0, .6, 1), 1, 1, 1, 40); // default blue
+	this.HEAD_RADIUS = 1/2;
+
+	// dimensions for thorax (rectangular prism)
+	this.THORAX_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
+	this.THORAX_X = 2;
+	this.THORAX_Y = 1;
+	this.THORAX_Z = 1;
+
+	// dimensions for abdomen (ellipse sphere)
+	this.ABDOMEN_MATERIAL = new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40); // default yellow
+	this.ABDOMEN_X = 2;
+	this.ABDOMEN_Y = 1;
+	this.ABDOMEN_Z = 1;
+
+	// dimensions for leg segment (rectangular prism)
+	this.LEG_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
+	this.LEG_X = 0.2;
+	this.LEG_Y = 1;
+	this.LEG_Z = 0.2;
+
+	// dimensions for the wing (rectangular prism)
+	this.WING_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
+	this.WING_X = 1;
+	this.WING_Y = 0.2;
+	this.WING_Z = 4;
+}
+
+// Flower Class
+// holds all of the attributes for flower creation
+function Flower() {
+
+	// controls the swaying angle of flower
+	this.MAX_STEM_ANGLE = 3;
+
+	// dimensions for flower
+	this.FLOWER_MATERIAL = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40); // default red
+	this.FLOWER_RADIUS = 3;
+
+	// dimensions for one stem segment
+	this.STEM_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10); // default olive greenPlastic
+	this.NUMBER_OF_STEM_SEGS = 8;
+	this.STEM_SEG_X = 0.5;
+	this.STEM_SEG_Y = 2;
+	this.STEM_SEG_Z = 0.5;
+}
+
+// Ground Class
+// holds all of the attributes for ground creation
+function Ground() {
+	// dimensions of ground plane
+	this.GROUND_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10);
+	this.GROUND_X = 100;
+	this.GROUND_Y = 0.1;
+	this.GROUND_Z = 20;
+}
+
 window.onload = function init() {	var anim = new Animation();	}
 function Animation()
 {
@@ -33,51 +100,6 @@ function Animation()
 		self.m_fan = new triangle_fan_full( 10, mat4() );
 		self.m_strip = new rectangular_strip( 1, mat4() );
 		self.m_cylinder = new cylindrical_strip( 10, mat4() );
-
-		self.BEE_FLIGHT_RADIUS = 10;
-		self.BEE_FLIGHT_Y_MOVEMENT = 3;
-
-		self.MAX_WING_ANGLE = 60;
-		self.MAX_LEG_ANGLE = 30;
-		self.MAX_STEM_ANGLE = 3;
-
-		// dimensions of ground plane
-		self.GROUND_X = 100;
-		self.GROUND_Y = 0.1;
-		self.GROUND_Z = 20;
-
-		// dimensions for head
-		self.HEAD_RADIUS = 1/2;
-
-		// dimensions for flower
-		self.FLOWER_RADIUS = 3;
-
-		// dimensions for one stem segment
-		self.NUMBER_OF_STEM_SEGS = 8;
-		self.STEM_SEG_X = 0.5;
-		self.STEM_SEG_Y = 2;
-		self.STEM_SEG_Z = 0.5;
-
-		// dimensions for abdomen (ellipse sphere)
-		self.ABDOMEN_X = 2;
-		self.ABDOMEN_Y = 1;
-		self.ABDOMEN_Z = 1;
-
-		// dimensions for thorax (rectangular prism)
-		self.THORAX_X = 2;
-		self.THORAX_Y = 1;
-		self.THORAX_Z = 1;
-
-		// dimensions for leg segment (rectangular prism)
-		self.LEG_X = 0.2;
-		self.LEG_Y = 1;
-		self.LEG_Z = 0.2;
-
-		// dimensions for the wing (rectangular prism)
-		self.WING_X = 1;
-		self.WING_Y = 0.2;
-		self.WING_Z = 4;
-
 		
 		// 1st parameter is camera matrix.  2nd parameter is the projection:  The matrix that determines how depth is treated.  It projects 3D points onto a plane.
 		self.graphicsState = new GraphicsState( translate(0, 0,-40), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
@@ -142,110 +164,144 @@ function to_radians(angle_in_degrees) {
 	return angle_in_degrees * Math.PI / 180;
 }
 
-Animation.prototype.draw_head = function(model_transform, material) {
-	model_transform = mult (model_transform, scale(this.HEAD_RADIUS, this.HEAD_RADIUS, this.HEAD_RADIUS));
-	this.m_sphere.draw( this.graphicsState, model_transform, material);
+Animation.prototype.draw_head = function(model_transform, bee) {
+	model_transform = mult (model_transform, scale(bee.HEAD_RADIUS, bee.HEAD_RADIUS, bee.HEAD_RADIUS));
+	this.m_sphere.draw( this.graphicsState, model_transform, bee.HEAD_MATERIAL);
 	return model_transform;
 }
 
-Animation.prototype.draw_thorax = function(model_transform, material) {
-	model_transform = mult (model_transform, scale(this.THORAX_X, this.THORAX_Y, this.THORAX_Z));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
+Animation.prototype.draw_thorax = function(model_transform, bee) {
+	model_transform = mult (model_transform, scale(bee.THORAX_X, bee.THORAX_Y, bee.THORAX_Z));
+	this.m_cube.draw(this.graphicsState, model_transform, bee.THORAX_MATERIAL);
 	return model_transform;
 }
 
-Animation.prototype.draw_abdomen = function(model_transform, material) {
-	model_transform = mult(model_transform, scale( this.ABDOMEN_X, this.ABDOMEN_Y, this.ABDOMEN_Z));
-	this.m_sphere.draw(this.graphicsState, model_transform, material);
+Animation.prototype.draw_abdomen = function(model_transform, bee) {
+	model_transform = mult(model_transform, scale( bee.ABDOMEN_X, bee.ABDOMEN_Y, bee.ABDOMEN_Z));
+	this.m_sphere.draw(this.graphicsState, model_transform, bee.ABDOMEN_MATERIAL);
 	return model_transform;
 }
 
-Animation.prototype.draw_leg_segment = function(model_transform, material) {
-	model_transform = mult(model_transform, scale(this.LEG_X, this.LEG_Y, this.LEG_Z));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
+Animation.prototype.draw_leg_segment = function(model_transform, bee) {
+	model_transform = mult(model_transform, scale(bee.LEG_X, bee.LEG_Y, bee.LEG_Z));
+	this.m_cube.draw(this.graphicsState, model_transform, bee.LEG_MATERIAL);
 	return model_transform;
 }
 
 // angle is in degrees
-Animation.prototype.draw_leg = function(model_transform, material, angle) {
+Animation.prototype.draw_leg = function(model_transform, angle, bee) {
 	model_transform = mult(model_transform, rotate(-angle, 1, 0, 0));
-	model_transform = mult(model_transform, translate(0, -this.LEG_Y/2, 0));
-	this.draw_leg_segment(model_transform, material);
-	model_transform = mult(model_transform, translate(0, -this.LEG_Y/2, 0));
+	model_transform = mult(model_transform, translate(0, -bee.LEG_Y/2, 0));
+	this.draw_leg_segment(model_transform, bee);
+	model_transform = mult(model_transform, translate(0, -bee.LEG_Y/2, 0));
 
 	model_transform = mult(model_transform, rotate(angle + 15, 1, 0, 0));
-	model_transform = mult(model_transform, translate(0, -this.LEG_Y/2, 0));
-	this.draw_leg_segment(model_transform, material);
+	model_transform = mult(model_transform, translate(0, -bee.LEG_Y/2, 0));
+	this.draw_leg_segment(model_transform, bee);
 
 	return model_transform;
 }
 
-Animation.prototype.draw_wing = function(model_transform, material, angle) {
+Animation.prototype.draw_wing = function(model_transform, angle, bee) {
 	model_transform = mult(model_transform, rotate(-angle, 1, 0, 0));
-	model_transform = mult(model_transform, translate (0, 0, this.WING_Z/2));
+	model_transform = mult(model_transform, translate (0, 0, bee.WING_Z/2));
 
-	model_transform = mult(model_transform, scale(this.WING_X, this.WING_Y, this.WING_Z));
-	this.m_cube.draw(this.graphicsState, model_transform, material);	
-
-	return model_transform;
-}
-
-Animation.prototype.draw_petal = function(model_transform, material) {
-	model_transform = mult(model_transform, scale(1, 1, 0.2));
-	this.m_fan.draw(this.graphicsState, model_transform, material);
+	model_transform = mult(model_transform, scale(bee.WING_X, bee.WING_Y, bee.WING_Z));
+	this.m_cube.draw(this.graphicsState, model_transform, bee.WING_MATERIAL);	
 
 	return model_transform;
 }
 
-Animation.prototype.draw_petals = function(model_transform, material) {
-
-	for (var i = 0; i < 6; i++) {
-		model_transform = mult(model_transform, translate (0.5, 0, 0));
-		this.draw_petal(model_transform, material);
-		model_transform = mult(model_transform, translate (-0.5, 0, 0));
-		model_transform = mult(model_transform, rotate(60, 0, 0, 1));
-	}
+Animation.prototype.draw_flower = function(model_transform, flower) {
+	model_transform = mult(model_transform, scale(flower.FLOWER_RADIUS, flower.FLOWER_RADIUS, flower.FLOWER_RADIUS));
+	this.m_sphere.draw(this.graphicsState, model_transform, flower.FLOWER_MATERIAL);
 
 	return model_transform;
 }
 
-Animation.prototype.draw_flower = function(model_transform, material) {
-	model_transform = mult(model_transform, scale(this.FLOWER_RADIUS, this.FLOWER_RADIUS, this.FLOWER_RADIUS));
-	this.m_sphere.draw(this.graphicsState, model_transform, material);
-
-	return model_transform;
-}
-
-Animation.prototype.draw_stem_segment = function(model_transform, material) {
-	model_transform = mult(model_transform, scale(this.STEM_SEG_X, this.STEM_SEG_Y, this.STEM_SEG_Z));
-	this.m_cube.draw(this.graphicsState, model_transform, material);
+Animation.prototype.draw_stem_segment = function(model_transform, flower) {
+	model_transform = mult(model_transform, scale(flower.STEM_SEG_X, flower.STEM_SEG_Y, flower.STEM_SEG_Z));
+	this.m_cube.draw(this.graphicsState, model_transform, flower.STEM_MATERIAL);
 
 	return model_transform;
 }
 
 // TODO: Trunk parts must rotate around the middle of the bottom face. (4 Points)
 // WHAT DOES THAT EVEN MEAN?
-Animation.prototype.draw_stem_and_flower = function(model_transform, stem_material, flower_material, stem_angle) {
+Animation.prototype.draw_stem_and_flower = function(model_transform, flower, stem_angle) {
 
-	for (var j = 0; j < this.NUMBER_OF_STEM_SEGS; j++) {
+	for (var j = 0; j < flower.NUMBER_OF_STEM_SEGS; j++) {
 			model_transform = mult(model_transform, rotate(stem_angle, 0, 0, 1));
 			model_transform = mult(model_transform, translate(0, 1, 0));
-			this.draw_stem_segment(model_transform, stem_material);
+			this.draw_stem_segment(model_transform, flower);
 			model_transform = mult(model_transform, translate(0, 1, 0));
 	}
-	this.draw_flower(model_transform, flower_material);
+	this.draw_flower(model_transform, flower);
 
 	return model_transform;
 }
 
-Animation.prototype.draw_ground = function(model_transform, material) {
-	model_transform = mult(model_transform, scale(this.GROUND_X, this.GROUND_Y, this.GROUND_Z));
+Animation.prototype.draw_ground = function(model_transform, ground) {
+	model_transform = mult(model_transform, scale(ground.GROUND_X, ground.GROUND_Y, ground.GROUND_Z));
 	model_transform = mult( model_transform, rotate(90, 0,0,1 ) );
-	this.m_strip.draw(this.graphicsState, model_transform, material);
+	this.m_strip.draw(this.graphicsState, model_transform, ground.GROUND_MATERIAL);
 	//this.m_cube.draw(this.graphicsState, model_transform, material);
 	return model_transform;
 }
 
+Animation.prototype.draw_bee = function(model_transform, bee) {
+	// start at thorax center
+	// draw the thorax and legs and wing?
+	var stack = new Array();
+	stack.push(model_transform);
+	
+	this.draw_thorax(model_transform, bee);
+	
+	model_transform = mult(model_transform, translate(-(bee.THORAX_X/2 + bee.HEAD_RADIUS), 0, 0));
+	this.draw_head(model_transform, bee);
+	
+	model_transform = stack.pop();
+	stack.push(model_transform);
+	model_transform = mult(model_transform, translate(bee.THORAX_X/2 + bee.ABDOMEN_X, 0, 0));
+	this.draw_abdomen(model_transform, bee);
+
+	model_transform = stack.pop();
+	stack.push(model_transform);
+	model_transform = mult(model_transform, translate(-bee.THORAX_X/2, -bee.THORAX_Y/2, bee.THORAX_Z/2));
+	
+	var leg_angle = bee.MAX_LEG_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time/30)) + 20;
+	for (var i = 0; i < 3; i++) {
+		model_transform = mult(model_transform, translate(bee.THORAX_X/4, 0, 0));
+		stack.push(model_transform);
+		this.draw_leg(model_transform, leg_angle, bee);
+		model_transform = mult(model_transform, translate(0, 0, -bee.THORAX_Z));
+		model_transform = mult(model_transform, rotate(180, 0, 1, 0));
+		this.draw_leg(model_transform, leg_angle, bee);
+		model_transform = stack.pop();
+	}
+
+	model_transform = stack.pop();
+	model_transform = mult (model_transform, translate(0, bee.THORAX_Y/2, bee.THORAX_Z/2));
+
+	var wing_angle = bee.MAX_WING_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time));
+	this.draw_wing(model_transform, wing_angle, bee);
+	model_transform = mult(model_transform, translate(0, 0, -1));
+	model_transform = mult(model_transform, rotate(180, 0, 1, 0));
+	this.draw_wing(model_transform, wing_angle, bee);
+
+}
+
+function getColor() {
+	var r = Math.random();
+	var g = Math.random();
+	var b = Math.random();
+
+	return new Material( vec4( r, g, b, 1 ), 1, 1, 1, 40 );
+}
+
+function getNewColor(number) {
+	return new Material(vec4( number, number/2, number/2, 1), 1, 1, 1, 40);
+}
 
 Animation.prototype.display = function(time)
 	{
@@ -270,61 +326,48 @@ Animation.prototype.display = function(time)
 			earth = new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "earth.gif" ),
 			clearRed = new Material (vec4 (0.4,0, 0,1), 0.5, 0.5, 0.5, 40),
 			stars = new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "stars.png" );
+		var colors = [	new Material( vec4( .9, .5, .9, 1 ), 1, 1, 1, 40 ), // Omit the string parameter if you want no texture
+						new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ),
+						new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40),
+						new Material (vec4 (.2, 0, .6, 1), 1, 1, 1, 40),
+						new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40),
+						new Material (vec4 (0.13, 0.545, 0.13, 1), 1, 1, 1, 40),
+						new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10),
+						new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "earth.gif" ),
+						new Material (vec4 (0.4,0, 0,1), 0.5, 0.5, 0.5, 40),
+						new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "stars.png" )
+					];
 			
 		/**********************************
 		Start coding here!!!!
 		**********************************/
+
 		var stack = new Array();
 		stack.push(model_transform);
 
-		model_transform = mult(model_transform, translate(0, -this.NUMBER_OF_STEM_SEGS * this.STEM_SEG_Y, 0));
-		this.draw_ground(model_transform, darkOlivePlastic);
-		var stem_angle = this.MAX_STEM_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time/20));
-		this.draw_stem_and_flower(model_transform, darkOlivePlastic, redPlastic, stem_angle);
+		var ground = new Ground();
+		var flower = new Flower();
+		flower.FLOWER_MATERIAL = getNewColor(0.7 + 0.3 * Math.sin(to_radians(this.graphicsState.animation_time/20)));
+
+		model_transform = mult(model_transform, translate(0, -flower.NUMBER_OF_STEM_SEGS * flower.STEM_SEG_Y, 0));
+		this.draw_ground(model_transform, ground);
+		var stem_angle = flower.MAX_STEM_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time/20));
+		this.draw_stem_and_flower(model_transform, flower, stem_angle);	
 
 		model_transform = stack.pop();
+		stack.push(model_transform);
 
+		var bee = new Bee();
 		var bee_angle = this.graphicsState.animation_time/50;
-		var bee_move_x = -this.BEE_FLIGHT_RADIUS * Math.sin(to_radians(bee_angle));
-		var bee_move_z = -this.BEE_FLIGHT_RADIUS * Math.cos(to_radians(bee_angle));
-		var bee_move_y = this.BEE_FLIGHT_Y_MOVEMENT * Math.sin(this.graphicsState.animation_time/1000);
+		var bee_move_x = -bee.BEE_FLIGHT_RADIUS * Math.sin(to_radians(bee_angle));
+		var bee_move_z = -bee.BEE_FLIGHT_RADIUS * Math.cos(to_radians(bee_angle));
+		var bee_move_y = bee.BEE_FLIGHT_Y_MOVEMENT * Math.sin(this.graphicsState.animation_time/1000);
 
 		model_transform = mult(model_transform, translate(bee_move_x, bee_move_y, bee_move_z));
 		model_transform = mult(model_transform, rotate( bee_angle, 0, 1, 0 ) );
 
-		stack.push(model_transform);
-
-		this.draw_abdomen(model_transform, yellowPlastic);
-		model_transform = mult (model_transform, translate(-(this.ABDOMEN_X + this.THORAX_X/2), 0, 0));
-
-		this.draw_thorax(model_transform, greyPlastic);
-		model_transform = mult (model_transform, translate(-(this.THORAX_X/2 + this.HEAD_RADIUS), 0, 0));
-
-		this.draw_head(model_transform, bluePlastic);
-		model_transform = mult(model_transform, translate(this.HEAD_RADIUS, -this.THORAX_Y/2, this.THORAX_Z/2));
-
-		var leg_angle = this.MAX_LEG_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time/30)) + 20;
-		for (var i = 0; i < 3; i++) {
-			model_transform = mult(model_transform, translate(this.THORAX_X/4, 0, 0));
-			stack.push(model_transform);
-			this.draw_leg(model_transform, greyPlastic, leg_angle);
-			model_transform = mult(model_transform, translate(0, 0, -this.THORAX_Z));
-			model_transform = mult(model_transform, rotate(180, 0, 1, 0));
-			this.draw_leg(model_transform,greyPlastic, leg_angle);
-			model_transform = stack.pop();
-		}
-
-		model_transform = stack.pop();
-		model_transform = mult (model_transform, translate(-(this.ABDOMEN_X + this.THORAX_X/2), this.THORAX_Y/2, this.THORAX_Z/2));
-
-		var wing_angle = this.MAX_WING_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time));
-		this.draw_wing(model_transform, greyPlastic, wing_angle);
-		model_transform = mult(model_transform, translate(0, 0, -1));
-		model_transform = mult(model_transform, rotate(180, 0, 1, 0));
-		this.draw_wing(model_transform, greyPlastic, wing_angle);
+		this.draw_bee(model_transform, bee);
 	}	
-
-
 
 Animation.prototype.update_strings = function( debug_screen_object )		// Strings this particular class contributes to the UI
 {
