@@ -16,73 +16,6 @@ function CURRENT_BASIS_IS_WORTH_SHOWING(self, model_transform) { self.m_axis.dra
 // When the web page's window loads it creates an "Animation" object.  It registers itself as a displayable object to our other class "GL_Context" -- which OpenGL is told to call upon every time a
 // draw / keyboard / mouse event happens.
 
-// Bee Class
-// holds all of the attributes for bee creation
-function Bee() {
-   	this.BEE_FLIGHT_RADIUS = 10;
-	this.BEE_FLIGHT_Y_MOVEMENT = 3;
-
-	this.MAX_WING_ANGLE = 60;
-	this.MAX_LEG_ANGLE = 30;
-
-	// dimensions for head
-	this.HEAD_MATERIAL = new Material (vec4 (.2, 0, .6, 1), 1, 1, 1, 40); // default blue
-	this.HEAD_RADIUS = 1/2;
-
-	// dimensions for thorax (rectangular prism)
-	this.THORAX_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
-	this.THORAX_X = 2;
-	this.THORAX_Y = 1;
-	this.THORAX_Z = 1;
-
-	// dimensions for abdomen (ellipse sphere)
-	this.ABDOMEN_MATERIAL = new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40); // default yellow
-	this.ABDOMEN_X = 2;
-	this.ABDOMEN_Y = 1;
-	this.ABDOMEN_Z = 1;
-
-	// dimensions for leg segment (rectangular prism)
-	this.LEG_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
-	this.LEG_X = 0.2;
-	this.LEG_Y = 1;
-	this.LEG_Z = 0.2;
-
-	// dimensions for the wing (rectangular prism)
-	this.WING_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
-	this.WING_X = 1;
-	this.WING_Y = 0.2;
-	this.WING_Z = 4;
-}
-
-// Flower Class
-// holds all of the attributes for flower creation
-function Flower() {
-
-	// controls the swaying angle of flower
-	this.MAX_STEM_ANGLE = 3;
-
-	// dimensions for flower
-	this.FLOWER_MATERIAL = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40); // default red
-	this.FLOWER_RADIUS = 3;
-
-	// dimensions for one stem segment
-	this.STEM_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10); // default olive greenPlastic
-	this.NUMBER_OF_STEM_SEGS = 8;
-	this.STEM_SEG_X = 0.5;
-	this.STEM_SEG_Y = 2;
-	this.STEM_SEG_Z = 0.5;
-}
-
-// Ground Class
-// holds all of the attributes for ground creation
-function Ground() {
-	// dimensions of ground plane
-	this.GROUND_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10);
-	this.GROUND_X = 100;
-	this.GROUND_Y = 0.1;
-	this.GROUND_Z = 20;
-}
-
 window.onload = function init() {	var anim = new Animation();	}
 function Animation()
 {
@@ -102,7 +35,7 @@ function Animation()
 		self.m_cylinder = new cylindrical_strip( 10, mat4() );
 		
 		// 1st parameter is camera matrix.  2nd parameter is the projection:  The matrix that determines how depth is treated.  It projects 3D points onto a plane.
-		self.graphicsState = new GraphicsState( translate(0, 0,-40), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
+		self.graphicsState = new GraphicsState( translate(0, 0,-50), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
 
 		gl.uniform1i( g_addrs.GOURAUD_loc, gouraud);		gl.uniform1i( g_addrs.COLOR_NORMALS_loc, color_normals);		gl.uniform1i( g_addrs.SOLID_loc, solid);
 		
@@ -300,7 +233,7 @@ function getColor() {
 }
 
 function getNewColor(number) {
-	return new Material(vec4( number, number/2, number/2, 1), 1, 1, 1, 40);
+	return new Material(vec4( number, number/4, number/4, 1), 1, 1, 1, 40);
 }
 
 Animation.prototype.display = function(time)
@@ -358,6 +291,7 @@ Animation.prototype.display = function(time)
 		stack.push(model_transform);
 
 		var bee = new Bee();
+		for (var bee_num = 0; bee_num < 5; bee_num++) {
 		var bee_angle = this.graphicsState.animation_time/50;
 		var bee_move_x = -bee.BEE_FLIGHT_RADIUS * Math.sin(to_radians(bee_angle));
 		var bee_move_z = -bee.BEE_FLIGHT_RADIUS * Math.cos(to_radians(bee_angle));
@@ -365,8 +299,13 @@ Animation.prototype.display = function(time)
 
 		model_transform = mult(model_transform, translate(bee_move_x, bee_move_y, bee_move_z));
 		model_transform = mult(model_transform, rotate( bee_angle, 0, 1, 0 ) );
-
 		this.draw_bee(model_transform, bee);
+
+		bee.BEE_FLIGHT_RADIUS+=3;
+		bee.ABDOMEN_MATERIAL = getColor();
+
+		}
+
 	}	
 
 Animation.prototype.update_strings = function( debug_screen_object )		// Strings this particular class contributes to the UI
@@ -375,4 +314,72 @@ Animation.prototype.update_strings = function( debug_screen_object )		// Strings
 	debug_screen_object.string_map["basis"] = "Showing basis: " + this.m_axis.basis_selection;
 	debug_screen_object.string_map["animate"] = "Animation " + (animate ? "on" : "off") ;
 	debug_screen_object.string_map["thrust"] = "Thrust: " + thrust;
+}
+
+
+// Bee Class
+// holds all of the attributes for bee creation
+function Bee() {
+   	this.BEE_FLIGHT_RADIUS = 10;
+	this.BEE_FLIGHT_Y_MOVEMENT = 3;
+
+	this.MAX_WING_ANGLE = 60;
+	this.MAX_LEG_ANGLE = 30;
+
+	// dimensions for head
+	this.HEAD_MATERIAL = new Material (vec4 (.2, 0, .6, 1), 1, 1, 1, 40); // default blue
+	this.HEAD_RADIUS = 1/2;
+
+	// dimensions for thorax (rectangular prism)
+	this.THORAX_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
+	this.THORAX_X = 2;
+	this.THORAX_Y = 1;
+	this.THORAX_Z = 1;
+
+	// dimensions for abdomen (ellipse sphere)
+	this.ABDOMEN_MATERIAL = new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40); // default yellow
+	this.ABDOMEN_X = 2;
+	this.ABDOMEN_Y = 1;
+	this.ABDOMEN_Z = 1;
+
+	// dimensions for leg segment (rectangular prism)
+	this.LEG_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
+	this.LEG_X = 0.2;
+	this.LEG_Y = 1;
+	this.LEG_Z = 0.2;
+
+	// dimensions for the wing (rectangular prism)
+	this.WING_MATERIAL = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ); // default grey
+	this.WING_X = 1;
+	this.WING_Y = 0.2;
+	this.WING_Z = 4;
+}
+
+// Flower Class
+// holds all of the attributes for flower creation
+function Flower() {
+
+	// controls the swaying angle of flower
+	this.MAX_STEM_ANGLE = 3;
+
+	// dimensions for flower
+	this.FLOWER_MATERIAL = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40); // default red
+	this.FLOWER_RADIUS = 3;
+
+	// dimensions for one stem segment
+	this.STEM_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10); // default olive greenPlastic
+	this.NUMBER_OF_STEM_SEGS = 8;
+	this.STEM_SEG_X = 0.5;
+	this.STEM_SEG_Y = 2;
+	this.STEM_SEG_Z = 0.5;
+}
+
+// Ground Class
+// holds all of the attributes for ground creation
+function Ground() {
+	// dimensions of ground plane
+	this.GROUND_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10);
+	this.GROUND_X = 100;
+	this.GROUND_Y = 0.1;
+	this.GROUND_Z = 20;
 }
