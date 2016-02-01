@@ -9,6 +9,7 @@
 var canvas, canvas_size, gl = null, g_addrs,
 	movement = vec2(),	thrust = vec3(), 	looking = false, prev_time = 0, animate = false, animation_time = 0;
 		var gouraud = false, color_normals = false, solid = false;
+		var psycho_option = false;
 function CURRENT_BASIS_IS_WORTH_SHOWING(self, model_transform) { self.m_axis.draw( self.basis_id++, self.graphicsState, model_transform, new Material( vec4( .8,.3,.8,1 ), 1, 1, 1, 40, "" ) ); }
 
 
@@ -24,7 +25,9 @@ function Animation()
 		self.context = new GL_Context( "gl-canvas" );
 		self.context.register_display_object( self );
 		
-		gl.clearColor( 0, 0, 0, 1 );			// Background color
+		// gl.clearColor( 0, 0, 0, 1 );			// Background color
+		// gl.clearColor(0, 0.74902, 1, 1);
+		gl.clearColor(0.254902, 0.411765, 0.882353, 1);
 
 		self.m_cube = new cube();
 		self.m_obj = new shape_from_file( "teapot.obj" )
@@ -33,9 +36,10 @@ function Animation()
 		self.m_fan = new triangle_fan_full( 10, mat4() );
 		self.m_strip = new rectangular_strip( 1, mat4() );
 		self.m_cylinder = new cylindrical_strip( 10, mat4() );
-		
+
 		// 1st parameter is camera matrix.  2nd parameter is the projection:  The matrix that determines how depth is treated.  It projects 3D points onto a plane.
-		self.graphicsState = new GraphicsState( translate(0, 0,-50), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
+		// self.graphicsState = new GraphicsState( translate(0, 0,-70), perspective(45, canvas.width/canvas.height, .1, 1000), 0 );
+		self.graphicsState = new GraphicsState( translate(0, 0,-70), perspective(45, canvas.width/canvas.height, .1, 800), 0);
 
 		gl.uniform1i( g_addrs.GOURAUD_loc, gouraud);		gl.uniform1i( g_addrs.COLOR_NORMALS_loc, color_normals);		gl.uniform1i( g_addrs.SOLID_loc, solid);
 		
@@ -67,7 +71,11 @@ Animation.prototype.init_keys = function()
 	shortcut.add( "ALT+a", function() { animate = !animate; } );
 	
 	shortcut.add( "p",     ( function(self) { return function() { self.m_axis.basis_selection++; console.log("Selected Basis: " + self.m_axis.basis_selection ); }; } ) (this) );
-	shortcut.add( "m",     ( function(self) { return function() { self.m_axis.basis_selection--; console.log("Selected Basis: " + self.m_axis.basis_selection ); }; } ) (this) );	
+	shortcut.add( "m",     ( function(self) { return function() { self.m_axis.basis_selection--; console.log("Selected Basis: " + self.m_axis.basis_selection ); }; } ) (this) );
+
+	shortcut.add( "y",     function() { psycho_option = !psycho_option; } );
+
+
 }
 
 function update_camera( self, animation_delta_time )
@@ -159,16 +167,20 @@ Animation.prototype.draw_stem_segment = function(model_transform, flower) {
 	return model_transform;
 }
 
-// TODO: Trunk parts must rotate around the middle of the bottom face. (4 Points)
-// WHAT DOES THAT EVEN MEAN?
-Animation.prototype.draw_stem_and_flower = function(model_transform, flower, stem_angle) {
-
+Animation.prototype.draw_stem = function(model_transform, flower, stem_angle) {
 	for (var j = 0; j < flower.NUMBER_OF_STEM_SEGS; j++) {
 			model_transform = mult(model_transform, rotate(stem_angle, 0, 0, 1));
-			model_transform = mult(model_transform, translate(0, 1, 0));
+			model_transform = mult(model_transform, translate(0, flower.STEM_SEG_Y/2, 0));
 			this.draw_stem_segment(model_transform, flower);
-			model_transform = mult(model_transform, translate(0, 1, 0));
+			model_transform = mult(model_transform, translate(0, flower.STEM_SEG_Y/2, 0));
 	}
+	return model_transform;
+
+}
+
+Animation.prototype.draw_stem_and_flower = function(model_transform, flower, stem_angle) {
+
+	model_transform = this.draw_stem(model_transform, flower, stem_angle);
 	this.draw_flower(model_transform, flower);
 
 	return model_transform;
@@ -183,8 +195,6 @@ Animation.prototype.draw_ground = function(model_transform, ground) {
 }
 
 Animation.prototype.draw_bee = function(model_transform, bee) {
-	// start at thorax center
-	// draw the thorax and legs and wing?
 	var stack = new Array();
 	stack.push(model_transform);
 	
@@ -216,7 +226,7 @@ Animation.prototype.draw_bee = function(model_transform, bee) {
 	model_transform = stack.pop();
 	model_transform = mult (model_transform, translate(0, bee.THORAX_Y/2, bee.THORAX_Z/2));
 
-	var wing_angle = bee.MAX_WING_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time));
+	var wing_angle = 25 + bee.MAX_WING_ANGLE * Math.sin(to_radians(this.graphicsState.animation_time));
 	this.draw_wing(model_transform, wing_angle, bee);
 	model_transform = mult(model_transform, translate(0, 0, -1));
 	model_transform = mult(model_transform, rotate(180, 0, 1, 0));
@@ -248,28 +258,6 @@ Animation.prototype.display = function(time)
 		this.basis_id = 0;
 		
 		var model_transform = mat4();
-		
-		var purplePlastic = new Material( vec4( .9, .5, .9, 1 ), 1, 1, 1, 40 ), // Omit the string parameter if you want no texture
-			greyPlastic = new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ),
-			yellowPlastic = new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40),
-			bluePlastic = new Material (vec4 (.2, 0, .6, 1), 1, 1, 1, 40),
-			redPlastic = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40),
-			greenPlastic = new Material (vec4 (0.13, 0.545, 0.13, 1), 1, 1, 1, 40),
-			darkOlivePlastic = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10),
-			earth = new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "earth.gif" ),
-			clearRed = new Material (vec4 (0.4,0, 0,1), 0.5, 0.5, 0.5, 40),
-			stars = new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "stars.png" );
-		var colors = [	new Material( vec4( .9, .5, .9, 1 ), 1, 1, 1, 40 ), // Omit the string parameter if you want no texture
-						new Material( vec4( .3, .3, .3, 1 ), 1, 1, .5, 20 ),
-						new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40),
-						new Material (vec4 (.2, 0, .6, 1), 1, 1, 1, 40),
-						new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40),
-						new Material (vec4 (0.13, 0.545, 0.13, 1), 1, 1, 1, 40),
-						new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10),
-						new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "earth.gif" ),
-						new Material (vec4 (0.4,0, 0,1), 0.5, 0.5, 0.5, 40),
-						new Material( vec4( .5,.5,.5,1 ), 1, 1, 1, 40, "stars.png" )
-					];
 			
 		/**********************************
 		Start coding here!!!!
@@ -291,19 +279,31 @@ Animation.prototype.display = function(time)
 		stack.push(model_transform);
 
 		var bee = new Bee();
-		for (var bee_num = 0; bee_num < 5; bee_num++) {
-		var bee_angle = this.graphicsState.animation_time/50;
-		var bee_move_x = -bee.BEE_FLIGHT_RADIUS * Math.sin(to_radians(bee_angle));
-		var bee_move_z = -bee.BEE_FLIGHT_RADIUS * Math.cos(to_radians(bee_angle));
-		var bee_move_y = bee.BEE_FLIGHT_Y_MOVEMENT * Math.sin(this.graphicsState.animation_time/1000);
+		
+		// for psycho_option press 'y' at your own risk :D
+		var b_num = 1;
+		if (psycho_option) {
+			gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
+			b_num = 5;
+		}
+		else 
+			gl.clearColor(0.254902, 0.411765, 0.882353, 1);
 
-		model_transform = mult(model_transform, translate(bee_move_x, bee_move_y, bee_move_z));
-		model_transform = mult(model_transform, rotate( bee_angle, 0, 1, 0 ) );
-		this.draw_bee(model_transform, bee);
+		for (var bee_num = 0; bee_num < b_num; bee_num++) {
+			// set up up and down movement (y-direction movement)
+			var bee_move_y = bee.BEE_FLIGHT_Y_MOVEMENT * Math.sin(this.graphicsState.animation_time/600);
+			model_transform = mult(model_transform, translate(0, bee_move_y, 0));
 
-		bee.BEE_FLIGHT_RADIUS+=3;
-		bee.ABDOMEN_MATERIAL = getColor();
+			// set up proper movement around flower
+			var bee_angle = this.graphicsState.animation_time/40;
+			model_transform = mult(model_transform, rotate(bee_angle, 0, 1, 0));
+			model_transform = mult(model_transform, translate(bee.BEE_FLIGHT_RADIUS, 0, 0));
+			model_transform = mult(model_transform, rotate(-90, 0, 1, 0));
 
+			this.draw_bee(model_transform, bee);
+
+			bee.BEE_FLIGHT_RADIUS+=3;
+			bee.ABDOMEN_MATERIAL = getColor();
 		}
 
 	}	
@@ -320,10 +320,10 @@ Animation.prototype.update_strings = function( debug_screen_object )		// Strings
 // Bee Class
 // holds all of the attributes for bee creation
 function Bee() {
-   	this.BEE_FLIGHT_RADIUS = 10;
+   	this.BEE_FLIGHT_RADIUS = 12;
 	this.BEE_FLIGHT_Y_MOVEMENT = 3;
 
-	this.MAX_WING_ANGLE = 60;
+	this.MAX_WING_ANGLE = 45;
 	this.MAX_LEG_ANGLE = 30;
 
 	// dimensions for head
@@ -360,17 +360,17 @@ function Bee() {
 function Flower() {
 
 	// controls the swaying angle of flower
-	this.MAX_STEM_ANGLE = 3;
+	this.MAX_STEM_ANGLE = 1;
 
 	// dimensions for flower
 	this.FLOWER_MATERIAL = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40); // default red
 	this.FLOWER_RADIUS = 3;
 
 	// dimensions for one stem segment
-	this.STEM_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10); // default olive greenPlastic
-	this.NUMBER_OF_STEM_SEGS = 8;
+	this.STEM_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 1, 1, 40); // default olive greenPlastic
+	this.NUMBER_OF_STEM_SEGS = 24;
 	this.STEM_SEG_X = 0.5;
-	this.STEM_SEG_Y = 2;
+	this.STEM_SEG_Y = 1;
 	this.STEM_SEG_Z = 0.5;
 }
 
@@ -378,8 +378,8 @@ function Flower() {
 // holds all of the attributes for ground creation
 function Ground() {
 	// dimensions of ground plane
-	this.GROUND_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 0.5, 0.5, 10);
-	this.GROUND_X = 100;
+	this.GROUND_MATERIAL = new Material (vec4 (0.180392, 0.545098, 0.341176, 1), 1, 1, 1, 10);
+	this.GROUND_X = 150;
 	this.GROUND_Y = 0.1;
-	this.GROUND_Z = 20;
+	this.GROUND_Z = 150;
 }
