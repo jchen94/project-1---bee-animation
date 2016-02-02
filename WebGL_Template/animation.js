@@ -105,6 +105,36 @@ function to_radians(angle_in_degrees) {
 	return angle_in_degrees * Math.PI / 180;
 }
 
+Animation.prototype.draw_petals = function(model_transform, flower) {
+	model_transform = mult(model_transform, rotate(20, 1, 0, 0));
+	var reset = model_transform;
+	var numPetals = flower.NUM_FLOWER_PETALS;
+	var angle = 0;
+
+	for (var i = 0; i < numPetals; i++) {
+		model_transform = mult(model_transform, rotate(angle, 0, 1, 0));
+		model_transform = mult(model_transform, rotate(-7, 1, 0, 0));
+
+		model_transform = mult(model_transform, translate(0, 0, flower.FLOWER_RADIUS + 3 * flower.FLOWER_RADIUS));
+		model_transform = mult(model_transform, scale(flower.PETAL_X, flower.PETAL_Y, flower.PETAL_Z));
+		this.m_sphere.draw(this.graphicsState, model_transform, flower.PETAL_MATERIAL);
+		model_transform = reset;
+		angle += 360/numPetals;
+	}
+
+	var angle_interleave = 360/numPetals/2;
+	for (var i =0; i < numPetals; i++) {
+		model_transform = mult(model_transform, rotate(angle + angle_interleave, 0, 1, 0));
+		model_transform = mult(model_transform, rotate(-5, 1, 0, 0));
+
+		model_transform = mult(model_transform, translate(0, 0, flower.FLOWER_RADIUS + 3 * flower.FLOWER_RADIUS));
+		model_transform = mult(model_transform, scale(flower.PETAL_X, flower.PETAL_Y, flower.PETAL_Z));
+		this.m_sphere.draw(this.graphicsState, model_transform, flower.PETAL_MATERIAL);
+		model_transform = reset;
+		angle += 360/numPetals;
+	}
+}
+
 Animation.prototype.draw_head = function(model_transform, bee) {
 	model_transform = mult (model_transform, scale(bee.HEAD_RADIUS, bee.HEAD_RADIUS, bee.HEAD_RADIUS));
 	this.m_sphere.draw( this.graphicsState, model_transform, bee.HEAD_MATERIAL);
@@ -154,8 +184,10 @@ Animation.prototype.draw_wing = function(model_transform, angle, bee) {
 }
 
 Animation.prototype.draw_flower = function(model_transform, flower) {
+	var reset = model_transform;
 	model_transform = mult(model_transform, scale(flower.FLOWER_RADIUS, flower.FLOWER_RADIUS, flower.FLOWER_RADIUS));
 	this.m_sphere.draw(this.graphicsState, model_transform, flower.FLOWER_MATERIAL);
+	this.draw_petals(reset, flower);
 
 	return model_transform;
 }
@@ -243,7 +275,7 @@ function getColor() {
 }
 
 function getNewColor(number) {
-	return new Material(vec4( number, number/4, number/4, 1), 1, 1, 1, 40);
+	return new Material(vec4( number, number, number/4, 1), 1, 1, 1, 40);
 }
 
 Animation.prototype.display = function(time)
@@ -263,6 +295,7 @@ Animation.prototype.display = function(time)
 		Start coding here!!!!
 		**********************************/
 
+
 		var stack = new Array();
 		stack.push(model_transform);
 
@@ -277,6 +310,7 @@ Animation.prototype.display = function(time)
 
 		model_transform = stack.pop();
 		stack.push(model_transform);
+		// this.draw_ring_of_balls(model_transform);
 
 		var bee = new Bee();
 		
@@ -363,8 +397,13 @@ function Flower() {
 	this.MAX_STEM_ANGLE = 1;
 
 	// dimensions for flower
-	this.FLOWER_MATERIAL = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40); // default red
-	this.FLOWER_RADIUS = 3;
+	this.FLOWER_MATERIAL = new Material (vec4 (.5, .5, 0, 1), 1, 1, 1, 40); // default yellow
+	this.FLOWER_RADIUS = 1;
+	this.PETAL_MATERIAL = new Material (vec4 (.4, 0, 0, 1), 1, 1, 1, 40);
+	this.NUM_FLOWER_PETALS = 24;
+	this.PETAL_X = 0.5;
+	this.PETAL_Y = 0.2;
+	this.PETAL_Z = 4;
 
 	// dimensions for one stem segment
 	this.STEM_MATERIAL = new Material (vec4 (0.333333, 0.419608, 0.184314, 1), 1, 1, 1, 40); // default olive greenPlastic
