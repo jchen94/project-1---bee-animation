@@ -290,17 +290,24 @@ Animation.prototype.display = function(time)
 		this.basis_id = 0;
 		
 		var model_transform = mat4();
-			
-		/**********************************
-		Start coding here!!!!
-		**********************************/
 
+		var ground = new Ground();
+		var flower = new Flower();
+		var bee = new Bee();
+
+		// for psycho_option press 'y' at your own risk :D
+		var b_num = 1;
+		if (psycho_option) {
+			gl.clearColor(0, 0, 0, 1);
+			ground.GROUND_MATERIAL = new Material(vec4( 0, 0.392157, 0, 1), 1, 1, 1, 10);
+			b_num = 6;
+		}
+		else 
+			gl.clearColor(0.254902, 0.411765, 0.882353, 1);
 
 		var stack = new Array();
 		stack.push(model_transform);
 
-		var ground = new Ground();
-		var flower = new Flower();
 		flower.FLOWER_MATERIAL = getNewColor(0.7 + 0.3 * Math.sin(to_radians(this.graphicsState.animation_time/20)));
 
 		model_transform = mult(model_transform, translate(0, -flower.NUMBER_OF_STEM_SEGS * flower.STEM_SEG_Y, 0));
@@ -310,18 +317,6 @@ Animation.prototype.display = function(time)
 
 		model_transform = stack.pop();
 		stack.push(model_transform);
-		// this.draw_ring_of_balls(model_transform);
-
-		var bee = new Bee();
-		
-		// for psycho_option press 'y' at your own risk :D
-		var b_num = 1;
-		if (psycho_option) {
-			gl.clearColor(Math.random(), Math.random(), Math.random(), 1);
-			b_num = 5;
-		}
-		else 
-			gl.clearColor(0.254902, 0.411765, 0.882353, 1);
 
 		for (var bee_num = 0; bee_num < b_num; bee_num++) {
 			// set up up and down movement (y-direction movement)
@@ -336,7 +331,7 @@ Animation.prototype.display = function(time)
 
 			this.draw_bee(model_transform, bee);
 
-			bee.BEE_FLIGHT_RADIUS+=3;
+			bee.BEE_FLIGHT_RADIUS+=1;
 			bee.ABDOMEN_MATERIAL = getColor();
 		}
 
@@ -417,7 +412,7 @@ function Flower() {
 // holds all of the attributes for ground creation
 function Ground() {
 	// dimensions of ground plane
-	this.GROUND_MATERIAL = new Material (vec4 (0.180392, 0.545098, 0.341176, 1), 1, 1, 1, 10);
+	this.GROUND_MATERIAL = new Material (vec4( 0.503922, 0.803922, 0.26078, 1), 1, 1, 1, 10);
 	this.GROUND_X = 150;
 	this.GROUND_Y = 0.1;
 	this.GROUND_Z = 150;
